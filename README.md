@@ -1,88 +1,79 @@
-# Tic Tac Toe
+# Red Preview
 
 ## Summary
-A minimal, modern, fully functional Tic Tac Toe game built with plain HTML, CSS, and JavaScript. It has no external dependencies and is production-ready for static hosting (including GitHub Pages). The UI is responsive, keyboard-accessible, and supports simple game state sharing and importing.
+Red Preview is a minimal, production-ready, red-themed web application for quickly embedding and previewing external URLs. It reads the `?url=` query parameter and attempts to display the provided page in an iframe. If the target site blocks embedding, the app provides an “Open in new tab” fallback and shareable link support.
 
-Key features:
-- Two-player local play (X vs O)
-- Win and draw detection with visual highlights
-- New game, swap starter, and reset scores
-- Keyboard support (arrow keys to move, Enter/Space to place)
-- Lightweight persistence of scores and starter in localStorage
-- Optional state sharing via URL hash
-- Optional import of a game state via the url query parameter (?url=...)
+Key characteristics:
+- Single-file app (index.html) with no external dependencies
+- Modern, clean, red-themed UI
+- Handles `?url=...` query parameter
+- Works out of the box on GitHub Pages
+
+Example:
+- https://your-username.github.io/your-repo/?url=https%3A%2F%2Fexample.com
 
 ## Setup
-No build tools or dependencies are required.
+1. Create a new repository (or use an existing one).
+2. Add the provided `index.html` to the repository root.
+3. Commit and push.
+4. Enable GitHub Pages for the repository:
+   - Repository Settings → Pages → Build and deployment → Source: “Deploy from a branch”
+   - Branch: “main” (or your default branch), Folder: “/ (root)”
+   - Save. After it builds, your app will be live at the shown Pages URL.
 
-- Open index.html directly in a browser; or
-- Host the repository on GitHub Pages (recommended):
-  1. Commit both index.html and README.md.
-  2. Enable GitHub Pages in your repository settings (Source: main branch, root).
-  3. Visit the published URL (e.g., https://<your-username>.github.io/<your-repo>/).
-
-The app works immediately after deployment.
+No build steps, no package installs, and no external assets are required.
 
 ## Usage
-- Click or tap a cell to place your mark (X starts by default).
-- The game announces wins and draws and highlights the winning line.
-- Controls:
-  - New Game: starts a new round (alternates the starting player).
-  - Swap Starter: switches which player starts the current/next round.
-  - Reset Scores: clears X/O win counters and draws, and resets the starter to X.
-- Keyboard:
-  - Arrow keys to move focus within the grid.
-  - Enter/Space to place a mark.
+- Interactive:
+  1. Navigate to the app.
+  2. Paste a URL into the input and press Enter or click “Preview”.
+  3. If the site allows embedding, it will render below. If it doesn’t, use “Open in new tab”.
 
-State sharing (optional):
-- Click “Share” to copy a URL with the current game state encoded in the hash. Visiting that URL restores the board and whose turn it is.
+- Via query parameter:
+  - Append `?url=<encoded URL>` to the app URL. For example:
+    - `?url=https%3A%2F%2Fexample.com`
+  - The app will auto-load and attempt to embed the target site.
+  - The input field is pre-filled, and the “Open in new tab” link is set.
 
-Importing game state via ?url=... (optional):
-- You can supply a remote JSON file containing a game state using a url query parameter:
-  - Example: https://your-pages-site.example/index.html?url=https://example.com/game.json
-  - The JSON schema must be:
-    {
-      "board": ["X","O","","","X","","","O",""],  // 9 entries, "", "X", or "O"
-      "current": "X"                               // whose turn next
-    }
-  - Notes and behavior:
-    - Only http(s) URLs are attempted.
-    - The file size is limited to 50 KB.
-    - CORS must allow the request (typical for raw hosting/CDN).
-    - If the imported position is already a win or a draw, the app will show that state and prevent further moves for that round.
-    - Importing does not change the win counters.
+- Share a link:
+  1. Enter a URL and click “Copy Link”. A shareable URL with the `?url=` parameter is copied to your clipboard.
 
-The app ignores invalid or unreachable URLs and will start a fresh game instead.
+- Clear:
+  - Click “Clear” to reset the viewer and remove the `?url` parameter from the address bar.
+
+Notes:
+- Many sites block embedding via HTTP headers like `X-Frame-Options` or `Content-Security-Policy`. If a page appears blank or fails to load, use the provided “Open in new tab” link.
+- Only `http` and `https` URLs are accepted. If you omit the protocol (e.g., `example.com`), the app assumes `https://`.
 
 ## Code Explanation
-- index.html
-  - Contains all HTML, CSS, and JavaScript in a single, production-ready file. No external resources.
-  - Accessibility:
-    - The board uses buttons with clear aria-labels per cell and a live status region.
-    - Keyboard navigation within the grid with arrow keys; Enter/Space to play.
-  - State:
-    - board: array of 9 strings "", "X", or "O".
-    - current: "X" or "O", indicating whose turn it is.
-    - gameOver: boolean; true after a win or draw.
-    - winLine: array of indexes of the winning cells (for highlight).
-    - starter: which player starts the next round (alternates by default).
-    - stats: { X, O, D } counts wins for X/O and draws.
-    - stats and starter are persisted to localStorage.
-  - Logic:
-    - Win detection checks 8 combinations (rows, columns, diagonals).
-    - Click handler writes to board, re-renders, and updates status/score.
-    - New Game clears the board and alternates starter.
-    - Swap Starter toggles starter immediately.
-    - Reset Scores clears stats and resets starter to X.
-  - Rendering:
-    - Each cell’s text content and classes are updated on each move.
-    - Disabled state prevents overwriting moves and interaction after gameOver.
-    - Winning cells receive a glow highlight.
-  - URL handling:
-    - Share link encodes the current state into the URL hash (state=...).
-    - On load, the app first tries to restore from hash; if absent, it checks for a url query parameter (?url=...).
-    - If ?url=... is present, the app fetches JSON, validates shape, and applies it. Errors are caught and do not break the UI.
-    - Safety measures include protocol checks (http/https only), a 4-second timeout, and a 50 KB payload limit.
+The entire application is contained in `index.html`:
+
+- Structure:
+  - Header: App title and brief instructions.
+  - Form controls: URL input and three buttons (Preview, Copy Link, Clear).
+  - Status bars: One above the viewer (live status/error messaging) and one below (new-tab fallback).
+  - Viewer: An `iframe` used to embed the target page.
+
+- Styling:
+  - Red theme implemented via CSS custom properties and gradients.
+  - Minimal, accessible, and responsive layout.
+  - No external fonts or CSS frameworks.
+
+- JavaScript:
+  - Query handling: On load, the app reads `?url=...`, normalizes and validates it, and auto-previews when valid.
+  - Normalization: If the user omits a scheme, `https://` is assumed. Only `http(s)` URLs are accepted.
+  - History updates: Uses `history.replaceState` to keep the address bar in sync with the current URL without reloading.
+  - Iframe loading:
+    - Sets `iframe.src` to the provided URL.
+    - Shows a status badge (“Loading”, “Loaded”, or “Error”).
+    - Displays a fallback message if the content doesn’t appear to load within a short timeout (some sites block embedding).
+  - Clipboard:
+    - “Copy Link” writes a shareable URL (including `?url`) to the clipboard using the Clipboard API, with a `document.execCommand` fallback.
+
+- Security considerations:
+  - The iframe uses `sandbox` with permissive flags to support more embedded sites while maintaining isolation from the host app.
+  - `referrerpolicy="no-referrer"` reduces leaked referrer information to the embedded page.
+  - Links to external sites use `rel="noopener noreferrer"`.
 
 ## License
 MIT License
