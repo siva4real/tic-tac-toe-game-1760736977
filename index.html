@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tic Tac Toe</title>
+  <meta name="description" content="A minimal, modern, fully functional Tic Tac Toe game. No dependencies. Works on GitHub Pages." />
+  <meta name="theme-color" content="#0ea5e9" />
+  <style>
+    :root{
+      --bg: #0b1020;
+      --panel: #0f172a;
+      --muted: #93a3b8;
+      --text: #e6edf3;
+      --accent: #0ea5e9;
+      --accent-2: #22c55e;
+      --danger: #ef4444;
+      --ring: color-mix(in hsl, var(--accent) 35%, transparent);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1b2747 0%, transparent 70%),
+        radial-gradient(1400px 800px at 120% 10%, #0b1e36 0%, transparent 60%),
+        var(--bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 24px;
+    }
+    .app{
+      width: min(92vw, 520px);
+      background: color-mix(in hsl, var(--panel) 90%, #0b0f1c 10%);
+      border: 1px solid #1f2a44;
+      border-radius: 16px;
+      box-shadow:
+        0 10px 30px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.03);
+      padding: 20px;
+    }
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-bottom: 12px;
+    }
+    h1{
+      font-size: clamp(18px, 2.6vw, 22px);
+      margin:0;
+      letter-spacing:.3px;
+      display:flex; align-items:center; gap:.6ch;
+    }
+    .badge{
+      font-size: 12px;
+      color: var(--muted);
+      background: #0b1f33;
+      border: 1px solid #12324f;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .status{
+      margin: 10px 0 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #0e1a2e;
+      border: 1px solid #162746;
+      color: var(--text);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .status strong{ color: var(--accent); }
+    .status .msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .import-note{
+      font-size:12px; color: var(--muted);
+    }
+    .board{
+      --gap: 10px;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+      margin: 10px 0 14px;
+    }
+    .cell{
+      -webkit-tap-highlight-color: transparent;
+      background: linear-gradient(180deg, #132544 0%, #0e1b32 100%);
+      border: 1px solid #1a2e52;
+      border-radius: 12px;
+      aspect-ratio: 1/1;
+      display:flex; align-items:center; justify-content:center;
+      color: var(--text);
+      font-weight: 800;
+      font-size: clamp(32px, 8.8vw, 64px);
+      letter-spacing:.8px;
+      cursor: pointer;
+      transition: transform .05s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+      box-shadow: 0 2px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.02);
+      user-select: none;
+      position: relative;
+      outline: none;
+    }
+    .cell:hover{ transform: translateY(-1px); }
+    .cell:active{ transform: translateY(0); }
+    .cell:focus-visible{
+      box-shadow: 0 0 0 3px var(--ring), 0 2px 0 rgba(0,0,0,.25);
+    }
+    .cell[disabled]{
+      cursor: not-allowed;
+      opacity: .95;
+    }
+    .cell.x{ color: var(--accent); text-shadow: 0 0 10px color-mix(in hsl, var(--accent) 20%, transparent); }
+    .cell.o{ color: var(--accent-2); text-shadow: 0 0 10px color-mix(in hsl, var(--accent-2) 20%, transparent); }
+    .cell.win{
+      border-color: color-mix(in hsl, var(--accent) 50%, white 10%);
+      background: linear-gradient(180deg, #13324f 0%, #0e2a47 100%);
+      animation: glow 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes glow{
+      from{ box-shadow: 0 0 0 rgba(0,0,0,0), inset 0 1px 0 rgba(255,255,255,.03); }
+      to{ box-shadow: 0 0 18px color-mix(in hsl, var(--accent) 40%, transparent); }
+    }
+    .controls{
+      display:flex; gap:10px; flex-wrap: wrap;
+      margin: 4px 0 10px;
+    }
+    .btn{
+      -webkit-tap-highlight-color: transparent;
+      appearance: none;
+      background: #0e243d;
+      color: var(--text);
+      border: 1px solid #173258;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .05s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease;
+      box-shadow: 0 1px 0 rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.02);
+    }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn:active{ transform: translateY(0); }
+    .btn:focus-visible{ box-shadow: 0 0 0 3px var(--ring); outline: none; }
+    .btn.primary{ background: #0c2a47; border-color: #1b4b7c; }
+    .btn.warn{ background: #361621; border-color:#5a1f2f; color:#ffd7df; }
+    .btn.secondary{ background: #0d2138; border-color: #173258; color: #c7d2e5; }
+    .score{
+      margin-top: 6px;
+      display:flex; gap: 12px; flex-wrap: wrap;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .score .pill{
+      background:#0b1f33;
+      border: 1px solid #12324f;
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: #c3d2e8;
+    }
+    footer{
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      display:flex; justify-content:space-between; align-items:center; gap: 10px; flex-wrap:wrap;
+    }
+    a{ color: #8ec5ff; text-decoration: none; }
+    a:hover{ text-decoration: underline; }
+    .hidden{ display:none !important; }
+
+    @media (max-width: 420px){
+      .app{ padding: 16px; }
+      .status{ font-size: 14px; }
+      .btn{ padding: 10px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <header>
+      <h1 aria-label="Tic Tac Toe Game">Tic Tac Toe <span class="badge">No deps</span></h1>
+      <div class="badge" id="turnBadge" aria-hidden="true">X starts</div>
+    </header>
+
+    <div class="status" role="status" aria-live="polite">
+      <div class="msg" id="statusMsg">Player X’s turn</div>
+      <div class="import-note hidden" id="importNote">Imported game</div>
+    </div>
+
+    <div class="board" id="board" role="grid" aria-label="Tic Tac Toe Board">
+      <button class="cell" id="c0" data-index="0" role="gridcell" aria-label="Row 1, Column 1, empty"></button>
+      <button class="cell" id="c1" data-index="1" role="gridcell" aria-label="Row 1, Column 2, empty"></button>
+      <button class="cell" id="c2" data-index="2" role="gridcell" aria-label="Row 1, Column 3, empty"></button>
+      <button class="cell" id="c3" data-index="3" role="gridcell" aria-label="Row 2, Column 1, empty"></button>
+      <button class="cell" id="c4" data-index="4" role="gridcell" aria-label="Row 2, Column 2, empty"></button>
+      <button class="cell" id="c5" data-index="5" role="gridcell" aria-label="Row 2, Column 3, empty"></button>
+      <button class="cell" id="c6" data-index="6" role="gridcell" aria-label="Row 3, Column 1, empty"></button>
+      <button class="cell" id="c7" data-index="7" role="gridcell" aria-label="Row 3, Column 2, empty"></button>
+      <button class="cell" id="c8" data-index="8" role="gridcell" aria-label="Row 3, Column 3, empty"></button>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="newGameBtn" type="button" aria-label="Start a new game">New Game</button>
+      <button class="btn secondary" id="swapStarterBtn" type="button" aria-label="Make the other player start next round">Swap Starter</button>
+      <button class="btn warn" id="resetBtn" type="button" aria-label="Reset scores and game">Reset Scores</button>
+    </div>
+
+    <div class="score" aria-label="Scoreboard">
+      <div class="pill">X Wins: <span id="xWins">0</span></div>
+      <div class="pill">O Wins: <span id="oWins">0</span></div>
+      <div class="pill">Draws: <span id="draws">0</span></div>
+    </div>
+
+    <footer>
+      <span>Tip: Use arrow keys to move, Enter/Space to play.</span>
+      <a href="#" id="shareLink" title="Copy a shareable link to this game">Share</a>
+    </footer>
+  </main>
+
+  <script>
+    "use strict";
+
+    (function(){
+      const boardEl = document.getElementById('board');
+      const cells = Array.from(boardEl.querySelectorAll('.cell'));
+      const statusMsg = document.getElementById('statusMsg');
+      const importNote = document.getElementById('importNote');
+      const turnBadge = document.getElementById('turnBadge');
+      const btnNew = document.getElementById('newGameBtn');
+      const btnSwap = document.getElementById('swapStarterBtn');
+      const btnReset = document.getElementById('resetBtn');
+      const shareLink = document.getElementById('shareLink');
+
+      const xWinsEl = document.getElementById('xWins');
+      const oWinsEl = document.getElementById('oWins');
+      const drawsEl = document.getElementById('draws');
+
+      const WINS = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+
+      // State
+      let board = Array(9).fill('');
+      let current = 'X';
+      let gameOver = false;
+      let winLine = null;
+      let starter = 'X'; // who starts next new game
+      let stats = { X: 0, O: 0, D: 0 };
+
+      // Persistence helpers (lightweight, non-critical)
+      const LS_KEYS = {
+        stats: 'ttt_stats_v1',
+        starter: 'ttt_starter_v1'
+      };
+      restorePersistent();
+
+      function restorePersistent(){
+        try{
+          const s = localStorage.getItem(LS_KEYS.stats);
+          if(s){
+            const obj = JSON.parse(s);
+            if(Number.isInteger(obj.X) && Number.isInteger(obj.O) && Number.isInteger(obj.D)){
+              stats = obj;
+            }
+          }
+          const st = localStorage.getItem(LS_KEYS.starter);
+          if(st === 'X' || st === 'O'){ starter = st; }
+        }catch{}
+        updateScoreUI();
+        updateTurnBadge();
+      }
+      function savePersistent(){
+        try{
+          localStorage.setItem(LS_KEYS.stats, JSON.stringify(stats));
+          localStorage.setItem(LS_KEYS.starter, starter);
+        }catch{}
+      }
+
+      function updateScoreUI(){
+        xWinsEl.textContent = String(stats.X);
+        oWinsEl.textContent = String(stats.O);
+        drawsEl.textContent = String(stats.D);
+      }
+
+      function updateTurnBadge(){
+        turnBadge.textContent = `${starter} starts`;
+      }
+
+      function renderBoard(){
+        for(let i=0;i<9;i++){
+          const v = board[i];
+          const cell = cells[i];
+          cell.textContent = v;
+          cell.classList.toggle('x', v === 'X');
+          cell.classList.toggle('o', v === 'O');
+          cell.disabled = Boolean(v) || gameOver;
+          const row = Math.floor(i/3)+1;
+          const col = i%3 + 1;
+          const lblState = v ? `${v}` : 'empty';
+          cell.setAttribute('aria-label', `Row ${row}, Column ${col}, ${lblState}`);
+          cell.classList.remove('win');
+        }
+        if(winLine){
+          for(const i of winLine){
+            cells[i].classList.add('win');
+          }
+        }
+      }
+
+      function setStatus(text, tone){
+        statusMsg.textContent = text;
+        // optional tone handling if needed in future
+      }
+
+      function checkWinner(){
+        for(const combo of WINS){
+          const [a,b,c] = combo;
+          if(board[a] && board[a] === board[b] && board[a] === board[c]){
+            return { winner: board[a], line: combo };
+          }
+        }
+        return null;
+      }
+
+      function isDraw(){
+        return board.every(v => v) && !checkWinner();
+      }
+
+      function endGame(message, winner, line){
+        gameOver = true;
+        winLine = line || null;
+        renderBoard();
+        setStatus(message);
+        if(winner === 'X') stats.X++;
+        else if(winner === 'O') stats.O++;
+        else stats.D++;
+        updateScoreUI();
+        savePersistent();
+      }
+
+      function handleCellClick(e){
+        const idx = Number(e.currentTarget.dataset.index);
+        if(gameOver || board[idx]) return;
+        board[idx] = current;
+        const win = checkWinner();
+        if(win){
+          endGame(`Player ${win.winner} wins!`, win.winner, win.line);
+          return;
+        }
+        if(isDraw()){
+          endGame(`It's a draw.`, null, null);
+          return;
+        }
+        current = current === 'X' ? 'O' : 'X';
+        setStatus(`Player ${current}’s turn`);
+        renderBoard();
+      }
+
+      function newGame({alternate=true} = {}){
+        board = Array(9).fill('');
+        winLine = null;
+        gameOver = false;
+        if(alternate){
+          starter = starter === 'X' ? 'O' : 'X';
+        }
+        current = starter;
+        setStatus(`Player ${current}’s turn`);
+        importNote.classList.add('hidden');
+        updateTurnBadge();
+        renderBoard();
+        savePersistent();
+        // focus the center cell for convenience
+        requestAnimationFrame(()=>cells[4].focus());
+      }
+
+      function swapStarter(){
+        starter = starter === 'X' ? 'O' : 'X';
+        current = starter;
+        setStatus(`Player ${current}’s turn`);
+        updateTurnBadge();
+        renderBoard();
+        savePersistent();
+      }
+
+      // Keyboard navigation with arrow keys within the grid
+      boardEl.addEventListener('keydown', (e)=>{
+        const key = e.key;
+        if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(key)) return;
+        const active = document.activeElement;
+        const idx = active && active.classList && active.classList.contains('cell')
+          ? Number(active.dataset.index) : 0;
+
+        let row = Math.floor(idx/3), col = idx%3;
+        if(key === 'ArrowUp'){ row = (row + 2) % 3; }
+        if(key === 'ArrowDown'){ row = (row + 1) % 3; }
+        if(key === 'ArrowLeft'){ col = (col + 2) % 3; }
+        if(key === 'ArrowRight'){ col = (col + 1) % 3; }
+        const next = row*3 + col;
+        cells[next].focus();
+        e.preventDefault();
+      });
+
+      // Attach click handlers
+      cells.forEach(btn => btn.addEventListener('click', handleCellClick));
+      btnNew.addEventListener('click', ()=> newGame({alternate:true}));
+      btnSwap.addEventListener('click', swapStarter);
+      btnReset.addEventListener('click', ()=>{
+        if(confirm('Reset scores and start over?')){
+          stats = { X:0, O:0, D:0 };
+          updateScoreUI();
+          starter = 'X';
+          newGame({alternate:false});
+          savePersistent();
+        }
+      });
+
+      // Share current game state link (encodes state in URL hash)
+      shareLink.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const payload = {
+          board, current, gameOver, starter
+        };
+        const encoded = encodeURIComponent(btoa(JSON.stringify(payload)));
+        const u = new URL(window.location.href);
+        u.hash = `state=${encoded}`;
+        navigator.clipboard?.writeText(u.toString()).then(()=>{
+          setStatus('Share link copied to clipboard');
+          setTimeout(()=> setStatus(`Player ${current}’s turn`), 1500);
+        }).catch(()=>{
+          // Fallback: update address bar
+          history.replaceState(null, '', u.toString());
+          setStatus('Share link ready in address bar');
+          setTimeout(()=> setStatus(`Player ${current}’s turn`), 1500);
+        });
+      });
+
+      // Optional: Load state from URL hash if present
+      function tryLoadHashState(){
+        const h = new URL(window.location.href).hash;
+        const m = h.match(/state=([^&]+)/);
+        if(!m) return false;
+        try{
+          const json = JSON.parse(atob(decodeURIComponent(m[1])));
+          if(Array.isArray(json.board) && (json.current === 'X' || json.current === 'O')){
+            applyImportedState({ board: json.board, current: json.current }, {note: 'Imported from share link'});
+            if(typeof json.starter === 'string' && (json.starter === 'X' || json.starter === 'O')){
+              starter = json.starter;
+              updateTurnBadge();
+            }
+            if(json.gameOver){
+              // Recompute to be safe
+              const win = checkWinner();
+              if(win) endGame(`Player ${win.winner} wins!`, win.winner, win.line);
+              else if(isDraw()) endGame(`It's a draw.`, null, null);
+            }
+            return true;
+          }
+        }catch{}
+        return false;
+      }
+
+      // Handle ?url=... parameter: fetch JSON state from remote URL if provided.
+      async function handleUrlParam(){
+        const urlParam = new URLSearchParams(window.location.search).get('url');
+        if(!urlParam) return false;
+
+        // Basic validation: only http(s), length, and safe parsing
+        let target;
+        try{
+          target = new URL(urlParam);
+        }catch{
+          console.warn('Invalid url parameter');
+          return false;
+        }
+        if(!(target.protocol === 'http:' || target.protocol === 'https:')){
+          console.warn('Blocked non-http(s) protocol for url parameter');
+          return false;
+        }
+        if(urlParam.length > 2048){ // overly long URL protection
+          console.warn('url parameter too long');
+          return false;
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(()=>controller.abort(), 4000);
+        try{
+          const res = await fetch(target.toString(), {
+            method: 'GET',
+            mode: 'cors',
+            redirect: 'follow',
+            cache: 'no-cache',
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' }
+          });
+          if(!res.ok){ throw new Error('Network response not ok'); }
+          const reader = res.body?.getReader?.();
+          let raw = '';
+          if(reader){
+            // Stream and limit size to 50KB
+            const dec = new TextDecoder();
+            let received = 0;
+            while(true){
+              const {done, value} = await reader.read();
+              if(done) break;
+              received += value.byteLength;
+              if(received > 51200) throw new Error('Payload too large');
+              raw += dec.decode(value, {stream: true});
+            }
+            raw += new TextDecoder().decode(new Uint8Array());
+          }else{
+            raw = await res.text();
+            if(raw.length > 51200) throw new Error('Payload too large');
+          }
+          let data;
+          try{
+            data = JSON.parse(raw);
+          }catch{
+            console.warn('Failed to parse JSON from url parameter');
+            return false;
+          }
+          if(validateImportedState(data)){
+            applyImportedState(data, {note: 'Imported game'});
+            return true;
+          }
+        }catch(err){
+          console.warn('Failed to import from url parameter', err);
+          return false;
+        }finally{
+          clearTimeout(timeout);
+        }
+        return false;
+      }
+
+      function validateImportedState(data){
+        if(!data || typeof data !== 'object') return false;
+        if(!Array.isArray(data.board) || data.board.length !== 9) return false;
+        if(!(data.current === 'X' || data.current === 'O')) return false;
+        for(const v of data.board){
+          if(!(v === '' || v === 'X' || v === 'O' || v === null)){
+            return false;
+          }
+        }
+        return true;
+      }
+
+      function applyImportedState(data, {note} = {}){
+        board = data.board.map(v => v === null ? '' : (v || ''));
+        current = data.current;
+        winLine = null;
+        gameOver = false;
+        renderBoard();
+        const win = checkWinner();
+        if(win){
+          gameOver = true;
+          winLine = win.line;
+          renderBoard();
+          setStatus(`Player ${win.winner} wins!`);
+        }else if(isDraw()){
+          gameOver = true;
+          setStatus(`It's a draw.`);
+        }else{
+          setStatus(`Player ${current}’s turn`);
+        }
+        if(note){
+          importNote.textContent = note;
+          importNote.classList.remove('hidden');
+        }
+        // Do not alter scores on import
+      }
+
+      // Initialize
+      (async function init(){
+        // If hash state exists, use it; else check ?url=...
+        const fromHash = tryLoadHashState();
+        if(!fromHash){
+          const imported = await handleUrlParam();
+          if(!imported){
+            // Fresh game
+            current = starter;
+            setStatus(`Player ${current}’s turn`);
+            renderBoard();
+          }
+        }else{
+          renderBoard();
+        }
+      })();
+
+      // Enhance: prevent text selection on double click
+      document.addEventListener('mousedown', (e)=>{
+        if(e.detail > 1){ e.preventDefault(); }
+      });
+    })();
+  </script>
+</body>
+</html>
